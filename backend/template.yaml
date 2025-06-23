@@ -55,13 +55,13 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VpcId
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: 172.30.1.0/24
       AvailabilityZone: !Select [0, !GetAZs '']
   SubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VpcId
-      CidrBlock: 10.0.2.0/24
+      CidrBlock: 172.30.1.0/24
       AvailabilityZone: !Select [1, !GetAZs '']
 
 Parameters:
