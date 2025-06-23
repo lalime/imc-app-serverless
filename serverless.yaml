@@ -1,0 +1,52 @@
+# Configurando o framework Serverless
+service: imc-calculator
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  region: us-east-1
+  environment:
+    DB_HOST: ${ssm:/imc/db/host}
+    DB_PORT: ${ssm:/imc/db/port}
+    DB_USER: ${ssm:/imc/db/username}
+    DB_PASSWORD: ${ssm:/imc/db/password}
+    DB_NAME: imc_db
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+            Action:
+              - rds-data:*
+              - secretsmanager:GetSecretValue
+            Resource: *
+
+functions:
+  calculateIMC:
+    handler: handler.calculateIMC
+    events:
+      - httpApi:
+          path: /calculate
+          method: post
+    environment:
+    DB_HOST: ${ssm:/imc/db/host}
+    DB_PORT: ${ssm:/imc/db/port}
+    DB_USER: ${ssm:/imc/db/username}
+    DB_PASSWORD: ${ssm:/imc/db/password}
+    DB_NAME: imc_db
+
+resources:
+  Resources:
+    IMCDatabase:
+      Type: AWS::RDS::DBCluster
+      Properties:
+        Engine: aurora-mysql
+        EngineMode: serverless
+        DatabaseName: imc_db
+        MasterUsername: ${ssm:/imc/db/username}
+        MasterPassword: ${ssm:/imc/db/password}
+        ScalingConfiguration:
+          AutoPause: true
+          MinCapacity: 1
+          MaxCapacity: 4
+        EnableHttpEndpoint: true
