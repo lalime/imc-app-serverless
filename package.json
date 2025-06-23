@@ -1,0 +1,8 @@
+{
+  "name": "imc-calculator",
+  "version": "1.0.0",
+  "dependencies": {
+    "mysql": "^2.18.1",
+    "aws-sdk": "^2.1000.0"
+  }
+}

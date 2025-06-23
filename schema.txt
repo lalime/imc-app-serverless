@@ -1,0 +1,10 @@
+-- Création de la table pour l'historique de l'IMC
+CREATE TABLE IF NOT EXISTS imc_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  weight DECIMAL(5,2) NOT NULL,
+  height DECIMAL(3,2) NOT NULL,
+  imc DECIMAL(4,2) NOT NULL,
+  date_calculated DATETIME NOT NULL,
+  INDEX idx_user_id (user_id)
+);
