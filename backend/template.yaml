@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Application Serverless pour le calcul de l'IMC
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  ImcFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handler.lambda_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DbSecretArn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - SecretsManagerReadWrite
+        - Statement:
+            - Sid: AllowRDSAccess
+              Effect: Allow
+              Action:
+                - rds-data:*
+                - rds:*
+              Resource: "*"
+      Events:
+        PostImc:
+          Type: Api
+          Properties:
+            Path: /imc
+            Method: POST
+        GetImc:
+          Type: Api
+          Properties:
+            Path: /imc
+            Method: GET
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref SubnetA
+          - !Ref SubnetB
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda to access RDS
+      VpcId: !Ref VpcId
+
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+
+Parameters:
+  DbSecretArn:
+    Type: String
+    Description: ARN du secret dans Secrets Manager
+  VpcId:
+    Type: String
+    Description: ID du VPC pour Lambda et RDS
+
+Outputs:
+  ApiUrl:
+    Description: URL de l'API Gateway
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
