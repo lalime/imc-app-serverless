@@ -10,7 +10,9 @@ secrets_manager = boto3.client('secretsmanager')
 # Cache pour la configuration de la base de données
 db_config = None
 
+
 def get_db_config():
+    """Récupère la configuration de la base de données depuis AWS Secrets Manager."""
     global db_config
     if db_config is None:
         secret_arn = os.environ['DB_SECRET_ARN']
@@ -18,15 +20,21 @@ def get_db_config():
         db_config = json.loads(secret['SecretString'])
     return db_config
 
-def calculate_bmi(height, weight):
+
+def calculate_imc(height, weight):
+    """Calcule l'IMC (Indice de Masse Corporelle) à partir de la taille et du poids."""
     return round(weight / (height * height), 2)
 
+
 def decimal_to_float(obj):
+    """Convertit les objets Decimal en float pour la sérialisation JSON."""
     if isinstance(obj, Decimal):
         return float(obj)
     raise TypeError
 
+
 def lambda_handler(event, context):
+    """Point d'entrée pour la fonction Lambda."""
     try:
         # Obtenir la configuration de la base de données
         config = get_db_config()
@@ -44,7 +52,7 @@ def lambda_handler(event, context):
         path = event.get('path')
 
         with connection.cursor() as cursor:
-            if http_method == 'POST' and path == '/bmi':
+            if http_method == 'POST' and path == '/imc':
                 body = json.loads(event.get('body', '{}'))
                 height = body.get('height')
                 weight = body.get('weight')
@@ -57,25 +65,25 @@ def lambda_handler(event, context):
                         })
                     }
 
-                bmi = calculate_bmi(height, weight)
+                imc = calculate_imc(height, weight)
 
                 # Insérer dans la base de données
                 cursor.execute(
-                    'INSERT INTO bmi_history (height, weight, bmi) VALUES (%s, %s, %s)',
-                    (height, weight, bmi)
+                    'INSERT INTO imc_history (height, weight, imc) VALUES (%s, %s, %s)',
+                    (height, weight, imc)
                 )
                 connection.commit()
 
                 return {
                     'statusCode': 200,
                     'body': json.dumps({
-                        'bmi': bmi,
+                        'imc': imc,
                         'message': 'IMC calculé et sauvegardé avec succès'
                     })
                 }
 
-            elif http_method == 'GET' and path == '/bmi':
-                cursor.execute('SELECT * FROM bmi_history ORDER BY created_at DESC')
+            elif http_method == 'GET' and path == '/imc':
+                cursor.execute('SELECT * FROM imc_history ORDER BY created_at DESC')
                 results = cursor.fetchall()
 
                 return {
